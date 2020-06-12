@@ -191,7 +191,6 @@ extern "C" {
 
 void
 android_main(android_app *aAppState) {
-
   if (!ALooper_forThread()) {
     ALooper_prepare(0);
   }
@@ -199,6 +198,12 @@ android_main(android_app *aAppState) {
   // Attach JNI thread
   JNIEnv *jniEnv;
   (*aAppState->activity->vm).AttachCurrentThread(&jniEnv, nullptr);
+
+  if (!sAppContext) {
+    sAppContext = std::make_shared<AppContext>();
+    sAppContext->mQueue = vrb::RunnableQueue::Create(aAppState->activity->vm);
+  }
+
   sAppContext->mQueue->AttachToThread();
 
   // Create Browser context
@@ -288,6 +293,9 @@ JNI_METHOD(jboolean, platformExit)
 }
 
 jint JNI_OnLoad(JavaVM* aVm, void*) {
+  if (sAppContext) {
+    return JNI_VERSION_1_6;
+  }
   sAppContext = std::make_shared<AppContext>();
   sAppContext->mQueue = vrb::RunnableQueue::Create(aVm);
   return JNI_VERSION_1_6;
